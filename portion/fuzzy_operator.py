@@ -30,31 +30,34 @@ class FuzzyOperator:
         return (a > b) and (not self.eq(a, b))
 
 
+class ClassicOperator:
+    # https://github.com/python/cpython/blob/3.8/Lib/operator.py
+    @staticmethod
+    def lt(a, b):
+        "Same as a < b."
+        return a < b
 
+    @staticmethod
+    def le(a, b):
+        "Same as a <= b."
+        return a <= b
 
-"""
-# https://github.com/python/cpython/blob/3.8/Lib/operator.py
-def lt(a, b):
-    "Same as a < b."
-    return a < b
+    @staticmethod
+    def eq(a, b):
+        "Same as a == b."
+        return a == b
 
-def le(a, b):
-    "Same as a <= b."
-    return a <= b
+    @staticmethod
+    def ne(a, b):
+        "Same as a != b."
+        return a != b
 
-def eq(a, b):
-    "Same as a == b."
-    return a == b
+    @staticmethod
+    def ge(a, b):
+        "Same as a >= b."
+        return a >= b
 
-def ne(a, b):
-    "Same as a != b."
-    return a != b
-
-def ge(a, b):
-    "Same as a >= b."
-    return a >= b
-
-def gt(a, b):
-    "Same as a > b."
-    return a > b
-"""
+    @staticmethod
+    def gt(a, b):
+        "Same as a > b."
+        return a > b

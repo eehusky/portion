@@ -1,11 +1,10 @@
 from collections import namedtuple
 from .const import Bound, inf
-import operator
-from .fuzzy_operator import FuzzyOperator
+from .fuzzy_operator import FuzzyOperator, ClassicOperator
 
 Atomic = namedtuple('Atomic', ['left', 'lower', 'upper', 'right'])
 
-op = operator
+op = ClassicOperator()
 
 def set_tolerance(rel_tol, abs_tol):
     global op
