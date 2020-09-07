@@ -6,6 +6,10 @@ Atomic = namedtuple('Atomic', ['left', 'lower', 'upper', 'right'])
 
 op = ClassicOperator()
 
+def set_operator(operator):
+    global op
+    op = operator
+
 def set_tolerance(rel_tol, abs_tol):
     global op
     if not isinstance(op,FuzzyOperator):
@@ -191,8 +195,8 @@ class Interval:
         True if interval is empty, False otherwise.
         """
         return (
-            self.lower > self.upper or
-            (self.lower == self.upper and (self.left == Bound.OPEN or self.right == Bound.OPEN))
+            op.gt(self.lower, self.upper) or
+            (op.eq(self.lower, self.upper) and (self.left is Bound.OPEN or self.right is Bound.OPEN))
         )
 
     @property
@@ -520,8 +524,8 @@ class Interval:
             for a, b in zip(self._intervals, other._intervals):
                 eq = (
                     a.left is b.left and
-                    a.lower == b.lower and
-                    a.upper == b.upper and
+                    op.eq(a.lower, b.lower) and
+                    op.eq(a.upper, b.upper) and
                     a.right is b.right
                 )
                 if not eq:
@@ -566,15 +570,15 @@ class Interval:
         for interval in self:
             if interval.empty:
                 intervals.append('()')
-            elif interval.lower == interval.upper:
+            elif op.eq(interval.lower, interval.upper):
                 intervals.append('[{}]'.format(repr(interval.lower)))
             else:
                 intervals.append(
                     '{}{},{}{}'.format(
-                        '[' if interval.left == Bound.CLOSED else '(',
+                        '[' if interval.left is Bound.CLOSED else '(',
                         repr(interval.lower),
                         repr(interval.upper),
-                        ']' if interval.right == Bound.CLOSED else ')',
+                        ']' if interval.right is Bound.CLOSED else ')',
                     )
                 )
         return ' | '.join(intervals)
@@ -584,15 +588,15 @@ class Interval:
         for interval in self:
             if interval.empty:
                 intervals.append('()')
-            elif interval.lower == interval.upper:
+            elif op.eq(interval.lower, interval.upper):
                 intervals.append('[{}]'.format(format(interval.lower, format_spec)))
             else:
                 intervals.append(
                     '{}{},{}{}'.format(
-                        '[' if interval.left == Bound.CLOSED else '(',
+                        '[' if interval.left is Bound.CLOSED else '(',
                         format(interval.lower, format_spec),
                         format(interval.upper, format_spec),
-                        ']' if interval.right == Bound.CLOSED else ')',
+                        ']' if interval.right is Bound.CLOSED else ')',
                     )
                 )
         return ' | '.join(intervals)
