@@ -6,7 +6,7 @@
 [![PyPI](https://badgen.net/pypi/v/portion)](https://pypi.org/project/portion)
 [![Commits](https://badgen.net/github/last-commit/AlexandreDecan/portion)](https://github.com/AlexandreDecan/portion/commits/)
 
-This fork of AlexandreDecan portions library only support floating point operations with the ability to do fuzzy comparisons on interval values.
+This fork of AlexandreDecan portions library only supports floating point operations with the ability to do fuzzy comparisons on interval values.
 
 The `portion` library (formerly distributed as `python-intervals`) provides data structure and operations for intervals in Python 3.5+.
 

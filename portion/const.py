@@ -35,7 +35,7 @@ class _PInf(_Singleton):
     Represent positive infinity.
     """
 
-    def __format__(self,format_spec): return float('+inf').__format__(format_spec)
+    def __format__(self,format_spec): return format(float('+inf'),format_spec)
 
     def __float__(self): return float('+inf')
 
@@ -60,7 +60,7 @@ class _NInf(_Singleton):
     """
     Represent negative infinity.
     """
-    def __format__(self,format_spec): return float('-inf').__format__(format_spec)
+    def __format__(self,format_spec): return format(float('-inf'),format_spec)
     
     def __float__(self): return float('-inf')
 

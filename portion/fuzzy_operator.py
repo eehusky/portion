@@ -1,39 +1,33 @@
 import math
-#from .const import inf
 
 
-__rel_tol__ = 1e-11
-__abs_tol__ = 1e-13
+class FuzzyOperator:
+    def __init__(self,rel_tol=0.0, abs_tol=0.0):
+        self.rel_tol = rel_tol
+        self.abs_tol = abs_tol
+
+    def lt(self,a, b):
+        return (a < b) and (not self.eq(a, b))
 
 
-def lt(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return (a < b) and (not eq(a, b, rel_tol=rel_tol, abs_tol=abs_tol))
+    def le(self,a, b):
+        return (a < b) or (self.eq(a, b))
 
 
-def le(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return (a < b) or (eq(a, b, rel_tol=rel_tol, abs_tol=abs_tol))
+    def eq(self,a, b):
+        return math.isclose(a, b, rel_tol=self.rel_tol, abs_tol=self.abs_tol)
 
 
-def eq(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
+    def ne(self,a, b):
+        return not math.isclose(a, b, rel_tol=self.rel_tol, abs_tol=self.abs_tol)
 
 
-def ne(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return not math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
+    def ge(self,a, b):
+        return (a > b) or (self.eq(a, b))
 
 
-def ge(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return (a > b) or (eq(a, b, rel_tol=rel_tol, abs_tol=abs_tol))
-
-
-def gt(a, b, rel_tol=__rel_tol__, abs_tol=__abs_tol__):
-    a, b = float(a), float(b)
-    return (a > b) and (not eq(a, b, rel_tol=rel_tol, abs_tol=abs_tol))
+    def gt(self,a, b):
+        return (a > b) and (not self.eq(a, b))
 
 
 

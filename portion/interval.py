@@ -1,10 +1,15 @@
 from collections import namedtuple
 from .const import Bound, inf
 #import operator as op
-from . import fuzzy_operator as op
+from .fuzzy_operator import FuzzyOperator
 
 Atomic = namedtuple('Atomic', ['left', 'lower', 'upper', 'right'])
 
+op = FuzzyOperator()
+
+def set_tolerance(rel_tol, abs_tol):
+    op.rel_tol = rel_tol
+    op.abs_tol = abs_tol
 
 def mergeable(a, b):
     """
