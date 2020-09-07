@@ -1,13 +1,17 @@
 from collections import namedtuple
 from .const import Bound, inf
-#import operator as op
+import operator
 from .fuzzy_operator import FuzzyOperator
 
 Atomic = namedtuple('Atomic', ['left', 'lower', 'upper', 'right'])
 
-op = FuzzyOperator()
+op = operator
 
 def set_tolerance(rel_tol, abs_tol):
+    global op
+    if not isinstance(op,FuzzyOperator):
+        op = FuzzyOperator()
+
     op.rel_tol = rel_tol
     op.abs_tol = abs_tol
 
