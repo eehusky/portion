@@ -9,7 +9,7 @@ __all__ = [
     'inf', 'CLOSED', 'OPEN',
     'Interval',
     'open', 'closed', 'openclosed', 'closedopen', 'singleton', 'empty',
-    'set_tolerance',
+    'set_tolerance', 'set_operator',
     'iterate',
     'from_string', 'to_string', 'from_data', 'to_data',
     'IntervalDict',
