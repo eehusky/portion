@@ -35,6 +35,10 @@ class _PInf(_Singleton):
     Represent positive infinity.
     """
 
+    def __format__(self,format_spec): return float('+inf').__format__(format_spec)
+
+    def __float__(self): return float('+inf')
+
     def __neg__(self): return _NInf()
 
     def __lt__(self, o): return False
@@ -47,7 +51,7 @@ class _PInf(_Singleton):
 
     def __eq__(self, o): return isinstance(o, _PInf)
 
-    def __repr__(self): return '+inf'
+    def __repr__(self): return repr(float('+inf'))
 
     def __hash__(self): return hash(float('+inf'))
 
@@ -56,6 +60,9 @@ class _NInf(_Singleton):
     """
     Represent negative infinity.
     """
+    def __format__(self,format_spec): return float('-inf').__format__(format_spec)
+    
+    def __float__(self): return float('-inf')
 
     def __neg__(self): return _PInf()
 
@@ -69,10 +76,11 @@ class _NInf(_Singleton):
 
     def __eq__(self, o): return isinstance(o, _NInf)
 
-    def __repr__(self): return '-inf'
+    def __repr__(self): return repr(float('-inf'))
 
     def __hash__(self): return hash(float('-inf'))
 
 
 # Positive infinity
 inf = _PInf()
+#inf = float('inf')

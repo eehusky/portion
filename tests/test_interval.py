@@ -37,7 +37,7 @@ class TestRepr:
         assert repr(P.open(0, 1)) == '(0,1)'
 
     def test_infinities(self):
-        assert repr(P.closed(-P.inf, P.inf)) == '(-inf,+inf)'
+        assert repr(P.closed(-P.inf, P.inf)) == '(-inf,inf)'
 
     def test_empty(self):
         assert repr(P.empty()) == '()'

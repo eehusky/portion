@@ -1,6 +1,7 @@
 from collections import namedtuple
 from .const import Bound, inf
-
+#import operator as op
+from . import fuzzy_operator as op
 
 Atomic = namedtuple('Atomic', ['left', 'lower', 'upper', 'right'])
 
@@ -13,15 +14,15 @@ def mergeable(a, b):
     :param b: an atomic interval.
     :return: True if mergeable, False otherwise.
     """
-    if a.lower < b.lower or (a.lower == b.lower and a.left == Bound.CLOSED):
+    if op.lt(a.lower, b.lower) or (a.lower is b.lower and a.left is Bound.CLOSED):
         first, second = a, b
     else:
         first, second = b, a
 
-    if first.upper == second.lower:
-        return first.right == Bound.CLOSED or second.left == Bound.CLOSED
+    if op.eq(first.upper, second.lower):
+        return first.right is Bound.CLOSED or second.left is Bound.CLOSED
 
-    return first.upper > second.lower
+    return op.gt(first.upper, second.lower)
 
 
 def open(lower, upper):
@@ -127,19 +128,19 @@ class Interval:
                 successor = self._intervals[i + 1]
 
                 if mergeable(current, successor):
-                    if current.lower == successor.lower:
+                    if op.eq(current.lower, successor.lower):
                         lower = current.lower
-                        left = current.left if current.left == Bound.CLOSED else successor.left
+                        left = current.left if current.left is Bound.CLOSED else successor.left
                     else:
                         lower = min(current.lower, successor.lower)
-                        left = current.left if lower == current.lower else successor.left
+                        left = current.left if op.eq(lower, current.lower) else successor.left
 
-                    if current.upper == successor.upper:
+                    if op.eq(current.upper, successor.upper):
                         upper = current.upper
-                        right = current.right if current.right == Bound.CLOSED else successor.right
+                        right = current.right if current.right is Bound.CLOSED else successor.right
                     else:
                         upper = max(current.upper, successor.upper)
-                        right = current.right if upper == current.upper else successor.right
+                        right = current.right if op.eq(upper, current.upper) else successor.right
 
                     union = Atomic(left, lower, upper, right)
                     self._intervals.pop(i)  # pop current
@@ -204,10 +205,10 @@ class Interval:
         :param upper: value of the upper bound.
         :param right: either CLOSED or OPEN.
         """
-        instance = Interval()
         left = left if lower not in [inf, -inf] else Bound.OPEN
         right = right if upper not in [inf, -inf] else Bound.OPEN
 
+        instance = Interval()
         instance._intervals = [Atomic(left, lower, upper, right)]
         if instance.empty:
             return Interval()
@@ -278,10 +279,10 @@ class Interval:
 
         if n_interval.atomic:
             return n_interval.replace(left, lower, upper, right)
-        else:
-            lowest = n_interval[0].replace(left=left, lower=lower)
-            highest = n_interval[-1].replace(upper=upper, right=right)
-            return Interval(lowest, *n_interval[1:-1], highest)
+
+        lowest = n_interval[0].replace(left=left, lower=lower)
+        highest = n_interval[-1].replace(upper=upper, right=right)
+        return Interval(lowest, *n_interval[1:-1], highest)
 
     def apply(self, func):
         """
@@ -343,8 +344,8 @@ class Interval:
                 else:
                     return True
             return False
-        else:
-            raise TypeError('Unsupported type {} for {}'.format(type(other), other))
+
+        raise TypeError('Unsupported type {} for {}'.format(type(other), other))
 
     def intersection(self, other):
         """
@@ -400,98 +401,90 @@ class Interval:
     def __getitem__(self, item):
         if isinstance(item, slice):
             return [Interval.from_atomic(*i) for i in self._intervals[item]]
-        else:
-            return Interval.from_atomic(*self._intervals[item])
+        return Interval.from_atomic(*self._intervals[item])
 
     def __and__(self, other):
         if not isinstance(other, Interval):
             return NotImplemented
 
         if self.atomic and other.atomic:
-            if self.lower == other.lower:
+            if op.eq(self.lower, other.lower):
                 lower = self.lower
-                left = self.left if self.left == Bound.OPEN else other.left
+                left = self.left if self.left is Bound.OPEN else other.left
             else:
                 lower = max(self.lower, other.lower)
-                left = self.left if lower == self.lower else other.left
+                left = self.left if op.eq(lower, self.lower) else other.left
 
-            if self.upper == other.upper:
+            if op.eq(self.upper, other.upper):
                 upper = self.upper
-                right = self.right if self.right == Bound.OPEN else other.right
+                right = self.right if self.right is Bound.OPEN else other.right
             else:
                 upper = min(self.upper, other.upper)
-                right = self.right if upper == self.upper else other.right
+                right = self.right if op.eq(upper, self.upper) else other.right
 
             return Interval.from_atomic(left, lower, upper, right)
-        else:
-            intersections = []
 
-            i_iter = iter(self)
-            o_iter = iter(other)
-            i_current = next(i_iter)
-            o_current = next(o_iter)
+        intersections = []
 
-            while i_current is not None and o_current is not None:
-                if i_current < o_current:
+        i_iter = iter(self)
+        o_iter = iter(other)
+        i_current = next(i_iter)
+        o_current = next(o_iter)
+
+        while i_current is not None and o_current is not None:
+            if i_current < o_current:
+                i_current = next(i_iter, None)
+            elif o_current < i_current:
+                o_current = next(o_iter, None)
+            else:
+                # i_current and o_current have an overlap
+                intersections.append(i_current & o_current)
+
+                if i_current <= o_current:
+                    # o_current can still intersect next i
                     i_current = next(i_iter, None)
-                elif o_current < i_current:
+                elif o_current <= i_current:
+                    # i_current can still intersect next o
                     o_current = next(o_iter, None)
                 else:
-                    # i_current and o_current have an overlap
-                    intersections.append(i_current & o_current)
+                    assert False
 
-                    if i_current <= o_current:
-                        # o_current can still intersect next i
-                        i_current = next(i_iter, None)
-                    elif o_current <= i_current:
-                        # i_current can still intersect next o
-                        o_current = next(o_iter, None)
-                    else:
-                        assert False
-
-            return Interval(*intersections)
+        return Interval(*intersections)
 
     def __or__(self, other):
         if isinstance(other, Interval):
             return Interval(self, other)
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __contains__(self, item):
         if isinstance(item, Interval):
             if self.atomic:
-                left = item.lower > self.lower or (
-                    item.lower == self.lower and
-                    (item.left == self.left or self.left == Bound.CLOSED)
-                )
-                right = item.upper < self.upper or (
-                    item.upper == self.upper and
-                    (item.right == self.right or self.right == Bound.CLOSED)
-                )
+                left = op.gt(item.lower, self.lower) or (op.eq(item.lower, self.lower) and (item.left is self.left or self.left is Bound.CLOSED))
+                right = op.lt(item.upper, self.upper) or (op.eq(item.upper, self.upper) and (item.right is self.right or self.right is Bound.CLOSED))
                 return left and right
-            else:
-                selfiter = iter(self)
-                current = next(selfiter)
 
-                for other in item:
-                    while current < other:
-                        try:
-                            current = next(selfiter)
-                        except StopIteration:
-                            return False
+            selfiter = iter(self)
+            current = next(selfiter)
 
-                    # here current and other could have an overlap
-                    if other not in current:
+            for other in item:
+                while current < other:
+                    try:
+                        current = next(selfiter)
+                    except StopIteration:
                         return False
+
+                # here current and other could have an overlap
+                if other not in current:
+                    return False
+            return True
+
+        # Item is a value
+        for i in self._intervals:
+            left = op.ge(item, i.lower) if i.left is Bound.CLOSED else op.gt(item, i.lower)
+            right = op.le(item, i.upper) if i.right is Bound.CLOSED else op.lt(item, i.upper)
+            if left and right:
                 return True
-        else:
-            # Item is a value
-            for i in self._intervals:
-                left = (item >= i.lower) if i.left == Bound.CLOSED else (item > i.lower)
-                right = (item <= i.upper) if i.right == Bound.CLOSED else (item < i.upper)
-                if left and right:
-                    return True
-            return False
+        return False
 
     def __invert__(self):
         complements = [
@@ -509,8 +502,7 @@ class Interval:
     def __sub__(self, other):
         if isinstance(other, Interval):
             return self & ~other
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __eq__(self, other):
         if isinstance(other, Interval):
@@ -519,56 +511,43 @@ class Interval:
 
             for a, b in zip(self._intervals, other._intervals):
                 eq = (
-                    a.left == b.left and
+                    a.left is b.left and
                     a.lower == b.lower and
                     a.upper == b.upper and
-                    a.right == b.right
+                    a.right is b.right
                 )
                 if not eq:
                     return False
             return True
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, Interval):
-            if self.right == Bound.OPEN:
-                return self.upper <= other.lower
-            else:
-                return self.upper < other.lower or \
-                    (self.upper == other.lower and other.left == Bound.OPEN)
-        else:
-            return self.upper < other or (self.right == Bound.OPEN and self.upper == other)
+            if self.right is Bound.OPEN:
+                return op.le(self.upper, other.lower)
+            return op.lt(self.upper, other.lower) or (op.eq(self.upper, other.lower) and other.left is Bound.OPEN)
+        return op.lt(self.upper, other) or (self.right is Bound.OPEN and op.eq(self.upper, other))
 
     def __gt__(self, other):
         if isinstance(other, Interval):
-            if self.left == Bound.OPEN:
-                return self.lower >= other.upper
-            else:
-                return self.lower > other.upper or \
-                    (self.lower == other.upper and other.right == Bound.OPEN)
-        else:
-            return self.lower > other or (self.left == Bound.OPEN and self.lower == other)
+            if self.left is Bound.OPEN:
+                return op.ge(self.lower, other.upper)
+            return op.gt(self.lower, other.upper) or (op.eq(self.lower, other.upper) and other.right is Bound.OPEN)
+        return op.gt(self.lower, other) or (self.left is Bound.OPEN and op.eq(self.lower, other))
 
     def __le__(self, other):
         if isinstance(other, Interval):
-            if self.right == Bound.OPEN:
-                return self.upper <= other.upper
-            else:
-                return self.upper < other.upper or \
-                    (self.upper == other.upper and other.right == Bound.CLOSED)
-        else:
-            return self.lower < other or (self.left == Bound.CLOSED and self.lower == other)
+            if self.right is Bound.OPEN:
+                return op.le(self.upper, other.upper)
+            return op.lt(self.upper, other.upper) or (op.eq(self.upper, other.upper) and other.right is Bound.CLOSED)
+        return op.lt(self.lower, other) or (self.left is Bound.CLOSED and op.eq(self.lower, other))
 
     def __ge__(self, other):
         if isinstance(other, Interval):
-            if self.left == Bound.OPEN:
-                return self.lower >= other.lower
-            else:
-                return self.lower > other.lower or \
-                    (self.lower == other.lower and other.left == Bound.CLOSED)
-        else:
-            return self.upper > other or (self.right == Bound.CLOSED and self.upper == other)
+            if self.left is Bound.OPEN:
+                return op.ge(self.lower, other.lower)
+            return op.gt(self.lower, other.lower) or (op.eq(self.lower, other.lower) and other.left is Bound.CLOSED)
+        return op.gt(self.upper, other) or (self.right is Bound.CLOSED and op.eq(self.upper, other))
 
     def __hash__(self):
         return hash(tuple([self.lower, self.upper]))
@@ -587,6 +566,24 @@ class Interval:
                         '[' if interval.left == Bound.CLOSED else '(',
                         repr(interval.lower),
                         repr(interval.upper),
+                        ']' if interval.right == Bound.CLOSED else ')',
+                    )
+                )
+        return ' | '.join(intervals)
+
+    def __format__(self, format_spec):
+        intervals = []
+        for interval in self:
+            if interval.empty:
+                intervals.append('()')
+            elif interval.lower == interval.upper:
+                intervals.append('[{}]'.format(format(interval.lower, format_spec)))
+            else:
+                intervals.append(
+                    '{}{},{}{}'.format(
+                        '[' if interval.left == Bound.CLOSED else '(',
+                        format(interval.lower, format_spec),
+                        format(interval.upper, format_spec),
                         ']' if interval.right == Bound.CLOSED else ')',
                     )
                 )
